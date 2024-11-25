@@ -149,6 +149,12 @@ class MotorDC:
 
     def detener(self):
         self.pwm.ChangeDutyCycle(0)
+ 
+    def cleanup(self):
+        """Detura el PWM i neteja la configuració GPIO del motor."""
+        self.pwm.stop()
+        del self.pwm  # Elimina l'objecte PWM per evitar errors en el destructor
+        GPIO.output([self.IN1, self.IN2], GPIO.LOW)
 
 # Configuración de bombas (solo 2)
 bombas = {
@@ -162,9 +168,12 @@ drink_recipes = [
     {"name": "Gin & Tonic", "ingredients": {"Rum": 50}},  # Ejemplo simplificado para usar "Rum"
 ]
 
+
+            
 # Función para calcular tiempo de dispensación
-def calcular_tiempo(ml, flujo=100):
+def calcular_tiempo(ml, flujo=20):
     return ml / flujo
+    
 
 # Función para activar las bombas y preparar la bebida
 def preparar_bebida(lcd, bebida):
@@ -179,7 +188,26 @@ def preparar_bebida(lcd, bebida):
         time.sleep(2)  # Pausa entre ingredientes
     lcd.escriu_frase(f"{bebida['name']} lista!")
 
+
+def cleanup_tot():
+    """Atura motors, neteja LCD i GPIO."""
+    for motor in bombas.values():
+        motor.cleanup()  # Atura i neteja cada motor
+    lcd.esborra_la_pantalla()
+    lcd.detencio_pantalla()
+    time.sleep(1)  # Esperar un poco para asegurarnos de que el LCD se limpia correctamente
+    lcd.cleanup()  # Neteja el LCD
+    GPIO.cleanup()  # Neteja els GPIO
+    
+
+def iniciar_lcd():
+    """Inicialitza el LCD de manera segura per evitar errors de display."""
+    lcd = LCD(RS, E, D4, D5, D6, D7)
+    lcd.inicia_pantalla()  # Inicialitza el display a un estat net i configurat
+    return lcd
+
 # Navegación del menú
+
 def navigate_menu():
     clk_last_state = GPIO.input(CLK)
     position = 0
@@ -203,12 +231,12 @@ def navigate_menu():
 
     except KeyboardInterrupt:
         print("Programa interrumpido.")
-    finally:
-        GPIO.cleanup()
+        cleanup_tot()  # Llamamos a la función de limpieza para detener todo y limpiar el LCD
 
 # Ejecución del programa
 if __name__ == "__main__":
-    lcd = LCD(RS, E, D4, D5, D6, D7)
-    lcd.esborra_la_pantalla()
+    lcd = iniciar_lcd()  # Usamos la función de inicialización limpia
     lcd.escriu_frase("Elige tu bebida")
     navigate_menu()
+
+
