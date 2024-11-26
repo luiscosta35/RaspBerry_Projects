@@ -154,18 +154,25 @@ class MotorDC:
         """Detura el PWM i neteja la configuració GPIO del motor."""
         self.pwm.stop()
         del self.pwm  # Elimina l'objecte PWM per evitar errors en el destructor
-        GPIO.output([self.IN1, self.IN2], GPIO.LOW)
+        GPIO.output([self.ENA, self.IN1, self.IN2], GPIO.LOW)
 
-# Configuración de bombas (solo 2)
+# Configuración de bombas 
 bombas = {
     "Rum": MotorDC(16, 20, 21),  # Pines GPIO para la bomba de "Rum"
     "Coke": MotorDC(12, 19, 26),  # Pines GPIO para la bomba de "Coke"
+    "Orange Juice": MotorDC(25, 17, 21),  # Pines GPIO para la bomba de "Orange Juice"
+    
 }
 
 # Configuración de recetas
 drink_recipes = [
     {"name": "Rum & Coke", "ingredients": {"Rum": 50, "Coke": 150}},
-    {"name": "Gin & Tonic", "ingredients": {"Rum": 50}},  # Ejemplo simplificado para usar "Rum"
+    {"name": "Gin & Tonic", "ingredients": {"Gin": 50, "Tonic": 150}},  # Ejemplo simplificado para usar "Rum"
+    {"name": "Screwdriver", "ingredients": {"Vodka": 50, "Orange Juice": 150}},
+    {"name": "Long Island", "ingredients": {"Gin": 15, "Rum": 15, "Vodka": 15, "Tequila": 15, "Coke": 100, "Orange Juice": 15}},
+    {"name": "Margarita", "ingredients": {"Tequila": 50, "mmix": 150}},
+    {"name": "Gin & Juice", "ingredients": {"Gin": 50, "Orange Juice": 150}},
+    {"name": "Tequila Sunrise", "ingredients": {"Tequila": 50, "Orange Juice": 150}},
 ]
 
 
@@ -192,12 +199,14 @@ def preparar_bebida(lcd, bebida):
 def cleanup_tot():
     """Atura motors, neteja LCD i GPIO."""
     for motor in bombas.values():
+        motor.detener()
         motor.cleanup()  # Atura i neteja cada motor
     lcd.esborra_la_pantalla()
     lcd.detencio_pantalla()
     time.sleep(1)  # Esperar un poco para asegurarnos de que el LCD se limpia correctamente
-    lcd.cleanup()  # Neteja el LCD
-    GPIO.cleanup()  # Neteja els GPIO
+    #lcd.cleanup()  # Neteja el LCD
+    #GPIO.cleanup()  # Neteja els GPIO
+    
     
 
 def iniciar_lcd():
